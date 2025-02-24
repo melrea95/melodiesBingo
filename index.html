@@ -5,49 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bingo App</title>
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f4f4f4; }
+        body { font-family: 'Arial', sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 0; }
         h1 { color: #333; }
-        #bingoBoard { 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            gap: 10px; 
-            width: 400px; 
-            margin: 20px auto; 
-            padding: 10px; 
+        #bingoBoard {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            width: 90%;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 10px;
             background: white;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        .bingoCell { 
-            padding: 20px; 
-            background: #e0e0e0; 
-            cursor: pointer; 
-            border-radius: 8px; 
-            text-align: center; 
+        .bingoCell {
+            padding: 15px;
+            background: #e0e0e0;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: center;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
             transition: all 0.3s ease-in-out;
         }
         .bingoCell:hover { background: #d0d0d0; }
-        .bingoCell.marked { 
-            background: #4CAF50; 
-            color: white; 
+        .bingoCell.marked {
+            background: #4CAF50;
+            color: white;
             transform: scale(1.1);
         }
-        button { 
-            margin: 10px; 
-            padding: 10px 20px; 
-            font-size: 16px; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
             transition: background 0.3s;
         }
         button:hover { opacity: 0.8; }
         button:first-of-type { background: #007BFF; color: white; }
         button:last-of-type { background: #28A745; color: white; }
-        textarea { 
-            width: 80%; 
+        textarea {
+            width: 80%;
+            max-width: 400px;
             margin-top: 10px;
             padding: 10px;
             border-radius: 5px;
@@ -60,18 +62,27 @@
             color: red;
             margin-top: 20px;
         }
+        #shareLink {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #333;
+        }
+        @media (max-width: 500px) {
+            .bingoCell { font-size: 12px; padding: 10px; }
+            button { font-size: 14px; padding: 8px 16px; }
+        }
     </style>
 </head>
 <body>
     <h1>Bingo App</h1>
-    <textarea id="bingoWords" rows="5" cols="50" placeholder="Skriv inn bingo-ord, ett per linje..."></textarea>
+    <textarea id="bingoWords" rows="5" placeholder="Skriv inn bingo-ord, ett per linje..."></textarea>
     <br>
     <button onclick="generateBingoBoard()">Generer Bingo-kort</button>
     <button onclick="shareBingoBoard()">Del Bingo-kort</button>
     <div id="bingoBoard"></div>
     <p id="shareLink"></p>
     <p id="bingoMessage"></p>
-    
+
     <script>
         function generateBingoBoard() {
             const words = document.getElementById("bingoWords").value.trim().split("\n").map(w => w.trim()).filter(w => w);
@@ -79,39 +90,34 @@
                 alert("Du må legge inn minst 25 ord for å fylle bingokortet!");
                 return;
             }
+            document.getElementById("bingoWords").style.display = "none";
             shuffle(words);
+            createBoard(words.slice(0, 25));
+        }
+
+        function createBoard(words) {
             const board = document.getElementById("bingoBoard");
             board.innerHTML = "";
-            for (let i = 0; i < 25; i++) {
+            words.forEach(word => {
                 const cell = document.createElement("div");
                 cell.className = "bingoCell";
-                cell.textContent = words[i];
+                cell.textContent = word;
                 cell.onclick = () => {
                     cell.classList.toggle("marked");
                     checkBingo();
                 };
                 board.appendChild(cell);
-            }
+            });
+            return words;
         }
-        
+
         function shuffle(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [array[i], array[j]] = [array[j], array[i]];
             }
         }
-        
-        function shareBingoBoard() {
-            const words = document.getElementById("bingoWords").value.trim().split("\n").map(w => w.trim()).filter(w => w);
-            if (words.length < 25) {
-                alert("Du må legge inn minst 25 ord før du kan dele!");
-                return;
-            }
-            const encodedWords = encodeURIComponent(words.join(","));
-            const shareURL = `${window.location.origin}${window.location.pathname}?words=${encodedWords}`;
-            document.getElementById("shareLink").innerHTML = `Del denne lenken: <a href="${shareURL}" target="_blank">${shareURL}</a>`;
-        }
-        
+
         function checkBingo() {
             const cells = document.querySelectorAll(".bingoCell");
             const grid = [...cells].map(cell => cell.classList.contains("marked"));
@@ -128,16 +134,24 @@
             }
             document.getElementById("bingoMessage").textContent = "";
         }
-        
-        function loadSharedBingo() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has("words")) {
-                document.getElementById("bingoWords").value = urlParams.get("words").split(",").join("\n");
-                generateBingoBoard();
+
+        function shareBingoBoard() {
+            const cells = document.querySelectorAll(".bingoCell");
+            const words = [...cells].map(cell => encodeURIComponent(cell.textContent)).join(",");
+            const url = `${window.location.origin}${window.location.pathname}?board=${words}`;
+            document.getElementById("shareLink").innerHTML = `Del denne lenken: <a href="${url}" target="_blank">${url}</a>`;
+        }
+
+        function loadSharedBoard() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has("board")) {
+                const words = params.get("board").split(",").map(decodeURIComponent);
+                createBoard(words);
+                document.getElementById("bingoWords").style.display = "none";
             }
         }
-        
-        window.onload = loadSharedBingo;
+
+        window.onload = loadSharedBoard;
     </script>
 </body>
 </html>

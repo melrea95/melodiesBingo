@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo App</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #bingoBoard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 300px; margin: auto; }
+        .bingoCell { padding: 20px; background: lightgray; cursor: pointer; border-radius: 5px; }
+        .bingoCell.marked { background: green; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Bingo App</h1>
+    <textarea id="bingoWords" rows="5" cols="50" placeholder="Skriv inn bingo-ord, ett per linje..."></textarea>
+    <br>
+    <button onclick="generateBingoBoard()">Generer Bingo-kort</button>
+    <button onclick="shareBingoBoard()">Del Bingo-kort</button>
+    <div id="bingoBoard"></div>
+    <p id="shareLink"></p>
+
+    <script>
+        function generateBingoBoard() {
+            const words = document.getElementById("bingoWords").value.trim().split("\n").map(w => w.trim()).filter(w => w);
+            if (words.length < 25) {
+                alert("Du må legge inn minst 25 ord for å fylle bingokortet!");
+                return;
+            }
+            shuffle(words);
+            const board = document.getElementById("bingoBoard");
+            board.innerHTML = "";
+            for (let i = 0; i < 25; i++) {
+                const cell = document.createElement("div");
+                cell.className = "bingoCell";
+                cell.textContent = words[i];
+                cell.onclick = () => cell.classList.toggle("marked");
+                board.appendChild(cell);
+            }
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function shareBingoBoard() {
+            const words = document.getElementById("bingoWords").value.trim().split("\n").map(w => w.trim()).filter(w => w);
+            if (words.length < 25) {
+                alert("Du må legge inn minst 25 ord før du kan dele!");
+                return;
+            }
+            const encodedWords = encodeURIComponent(words.join(","));
+            const shareURL = `${window.location.origin}${window.location.pathname}?words=${encodedWords}`;
+            document.getElementById("shareLink").innerHTML = `Del denne lenken: <a href="${shareURL}" target="_blank">${shareURL}</a>`;
+        }
+
+        function loadSharedBingo() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has("words")) {
+                document.getElementById("bingoWords").value = urlParams.get("words").split(",").join("\n");
+                generateBingoBoard();
+            }
+        }
+
+        window.onload = loadSharedBingo;
+    </script>
+</body>
+</html>
